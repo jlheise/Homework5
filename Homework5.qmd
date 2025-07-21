@@ -5,7 +5,7 @@ format: pdf
 editor: visual
 ---
 
-## Task 1
+## Task 1: Conceptual Questions
 
 ### 1. What is the purpose of using cross-validation when fitting a random forest model?
 
@@ -27,4 +27,41 @@ Allows for the effect of one variable to depend on the value of another.
 
 We want to be able to use models to predict well for observations it has yet to see and avoid overfitting the model based on the test data which is why the training set is used to traing the model and the test set is used to judge effectiveness of the model.
 
-## Task 2
+## Task 2: Data Prep
+
+### Packages & Library
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+library(tidyverse)
+library(tidymodels)
+library(caret)
+library(yardstick)
+
+# Read in csv data
+heart_data <- read.csv('heart.csv')
+```
+
+### Run a report summary()
+
+```{r}
+summary(heart_data)
+```
+
+### Report summary questions
+
+#### 1. What type of variable (in R) is Heart Disease? Categorical or Quantitative?
+
+Numeric. Categorical.
+
+#### 2. Does this make sense? Why or why not.
+
+This does not make sense because the heart disease variable tells whether or not someone has heart disease- essentially a yes or a no. This data should not be numeric.
+
+### Continued data prep
+
+```{r}
+# Change HeartDisease to logical, drop ST_Slope, HeartDisease
+new_heart <- heart_data %>%
+  mutate(HeartDisease_logical = as.logical(HeartDisease)) %>%
+  select(-HeartDisease, -ST_Slope)
+```
