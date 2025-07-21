@@ -1,0 +1,30 @@
+---
+title: "Homework5"
+author: "Jessie Heise"
+format: pdf
+editor: visual
+---
+
+## Task 1
+
+### 1. What is the purpose of using cross-validation when fitting a random forest model?
+
+To avoid overfitting.
+
+### 2. Describe the bagged tree algorithm.
+
+The bagged tree algorithm fits many trees on bootstrap samples and combines the predictions.
+
+### 3. What is meant by a general linear model?
+
+A statistical model used on non-normal data.
+
+### 4. When fitting a multiple linear regression model, what does adding an interaction term do? That is, what does it allow the model to do differently as compared to when it is not included in the model?
+
+Allows for the effect of one variable to depend on the value of another.
+
+### 5. Why do we split our data into a training and test set?
+
+We want to be able to use models to predict well for observations it has yet to see and avoid overfitting the model based on the test data which is why the training set is used to traing the model and the test set is used to judge effectiveness of the model.
+
+## Task 2
