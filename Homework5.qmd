@@ -62,6 +62,30 @@ This does not make sense because the heart disease variable tells whether or not
 ```{r}
 # Change HeartDisease to logical, drop ST_Slope, HeartDisease
 new_heart <- heart_data %>%
-  mutate(HeartDisease_logical = as.logical(HeartDisease)) %>%
+  mutate(HeartDisease_pres = as.logical(HeartDisease)) %>%
   select(-HeartDisease, -ST_Slope)
 ```
+
+## Task 3: EDA
+
+### Model someone's age as a function of heart disease and their max heart rate
+
+```{r}
+# Create appropriate scatterplot to visualize this relationship
+ggplot2::ggplot(data = new_heart, aes(x= MaxHR, y = Age, color = HeartDisease_pres)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Age as a function of heart disease and maximum heart rate",
+    x = "Maximum Heart Rate",
+    y = "Age",
+    color = "Presence of Heart Disease"
+  ) +
+  scale_color_viridis_d()
+```
+
+### Based on visual evidence, do you think an interaction model or an additive model is more appropriate?
+
+Based on the visual evidence, an interactive model is more appropriate because the lines for presence of heart disease cross, suggesting an interactive effect.
+
+## Task 4: Testing & Training
