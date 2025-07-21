@@ -89,3 +89,11 @@ ggplot2::ggplot(data = new_heart, aes(x= MaxHR, y = Age, color = HeartDisease_pr
 Based on the visual evidence, an interactive model is more appropriate because the lines for presence of heart disease cross, suggesting an interactive effect.
 
 ## Task 4: Testing & Training
+
+```{r}
+# Split data into a training and test set. Seed = 101. 80-20 split.
+set.seed(101)
+heart_split <- initial_split(new_heart, prop = 0.8)
+train <- training(heart_split)
+test <- testing(heart_split)
+```
