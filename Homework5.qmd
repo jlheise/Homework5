@@ -181,3 +181,78 @@ LASSO_final |>
 
 I think the RMSE calculations are roughly the same even though the coefficients for each model are
 different because both models might average the same errors.
+
+## Task 6: Logistic Regression
+
+```{r}
+set.seed(3557)
+heart_data <- heart_data |>
+  mutate(HeartDisease = factor(HeartDisease)) 
+heart_split <- initial_split(heart_data, prop = 0.8) 
+heart_train <- training(heart_split) 
+heart_test <- testing(heart_split) 
+heart_CV_folds <- vfold_cv(heart_train, 10)
+
+LR1_rec <- recipe(HeartDisease ~ RestingBP + RestingECG, data = heart_train) |>  
+  step_normalize(all_numeric(), -HeartDisease) |>  
+  step_dummy(RestingECG) 
+LR2_rec <- recipe(HeartDisease ~ ChestPainType + MaxHR + ExerciseAngina, data = heart_train) |>  
+  step_normalize(all_numeric(), -HeartDisease) |>  
+  step_dummy(ChestPainType, ExerciseAngina) 
+LR2_rec |> 
+  prep(heart_train) |> 
+  bake(heart_train) |> 
+  colnames()
+LR_spec <- logistic_reg() |>  
+  set_engine("glm")
+LR1_wkf <- workflow() |>  
+  add_recipe(LR1_rec) |>  
+  add_model(LR_spec) 
+LR2_wkf <- workflow() |>  
+  add_recipe(LR2_rec) |>  
+  add_model(LR_spec)
+LR1_fit <- LR1_wkf |>  
+  fit_resamples(heart_CV_folds, metrics = metric_set(accuracy, mn_log_loss))
+LR2_fit <- LR2_wkf |>  
+  fit_resamples(heart_CV_folds, metrics = metric_set(accuracy, mn_log_loss))
+rbind(LR1_fit |> collect_metrics(),
+      LR2_fit |> collect_metrics()) |>  
+  mutate(Model = c("Model1", "Model1", "Model2", "Model2")) |>
+  select(Model, everything())
+mean(heart_train$HeartDisease == "1")
+```
+
+The best performing model is Model 2 because it has higher accuracy and log loss closer to 0. Model 2 uses Chest Pain Type, Max HR, and Exercise in Angina.
+
+```{r}
+final_model <- LR2_wkf |>  
+  fit(heart_data) 
+tidy(final_model)
+LR_train_fit <- LR2_wkf |>  
+  fit(heart_train) 
+LR2_wkf |>  
+  last_fit(heart_split, metrics = metric_set(accuracy, mn_log_loss)) |>
+  collect_metrics()
+```
+
+Check how well Model 2 does on the test set using the confusionMatrix() function:
+
+```{r}
+LR2_test_fit <- LR2_wkf |>
+  fit(heart_test)
+
+conf_mat(heart_test |> mutate(estimate = LR_test_fit |> predict(heart_test) |> pull()), HeartDisease, estimate) 
+
+TP <- 81
+FN <- 16
+TN <- 58
+FP <- 29
+
+sensitivity <- TP/(TP+FN)
+specificity <- TN/(TN+FP)
+
+print(sensitivity)
+print(specificity)
+```
+
+Since sensitivity is the true positive rate, the model accurately predicts the presence of heart disease in 83.5% of the time. Since Specificity is the true negative rate, the model accurately predicts the absence of heart disease 66.7% of hte time. The model is better at predicting heart disease than not predicting it.
