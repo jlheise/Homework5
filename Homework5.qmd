@@ -61,8 +61,8 @@ This does not make sense because the heart disease variable tells whether or not
 
 ```{r}
 # Change HeartDisease to logical, drop ST_Slope, HeartDisease
-new_heart <- heart_data %>%
-  mutate(HeartDisease_pres = as.logical(HeartDisease)) %>%
+new_heart <- heart_data |>
+  mutate(HeartDisease_pres = as.factor(HeartDisease)) |>
   select(-HeartDisease, -ST_Slope)
 ```
 
@@ -97,3 +97,87 @@ heart_split <- initial_split(new_heart, prop = 0.8)
 train <- training(heart_split)
 test <- testing(heart_split)
 ```
+
+## Task 5: OLS and LASSO
+
+### Fit an interaction model
+
+```{r}
+# Fit an interaction model with age as response, max hr + heart disease as explanatory variables using the training data set using OLS regression. report summary output
+ols_mlr <- lm(Age ~ HeartDisease_pres * MaxHR, data = train)
+summary(ols_mlr)
+
+# Test model on testing data set
+ols_predict <- predict(ols_mlr, newdata = test)
+
+# Calculate RMSE for OLS
+rmse_vec(test$Age, predict(ols_mlr, newdata = test))
+```
+
+### See if LASSO has better predictive performance
+
+```{r}
+# Use CV to select best tuning parameter. Evaluate LASSO model on testing data set
+heart_CV_folds <- vfold_cv(new_heart, 10)
+
+my_metrics <- metric_set(rmse)
+
+LASSO_recipe <- recipe(Age ~ HeartDisease_pres + MaxHR, 
+                      data = new_heart) |>
+  step_dummy(HeartDisease_pres) |>
+  step_normalize(MaxHR) |>
+  step_interact(~ starts_with("HeartDisease_pres"):starts_with("MaxHR_"))
+LASSO_recipe
+
+LASSO_spec <- linear_reg(penalty = tune(), mixture = 1) |>
+  set_engine("glmnet")
+
+LASSO_wkf <- workflow() |>
+  add_recipe(LASSO_recipe) |>
+  add_model(LASSO_spec)
+LASSO_wkf
+
+#A warning will occur for one value of the tuning parameter, safe to ignore
+LASSO_grid <- LASSO_wkf |>
+  tune_grid(resamples = heart_CV_folds,
+            grid = grid_regular(penalty(), levels = 5),
+            metrics = my_metrics) 
+
+LASSO_grid
+
+LASSO_grid[1, ".metrics"][[1]]
+
+LASSO_grid |>
+  collect_metrics() |>
+  filter(.metric == "rmse")
+
+lowest_rmse <- LASSO_grid |>
+  select_best(metric = "rmse")
+
+lrmse <- as.numeric(lowest_rmse$penalty)
+
+
+LASSO_final <- LASSO_wkf |>
+  finalize_workflow(lowest_rmse) |>
+  fit(new_heart)
+tidy(LASSO_final)
+
+```
+
+I would expect the RMSE calculations to be different since the intercepts of the models are different.
+
+### Compare RMSEs:
+
+```{r}
+ols_mlr |>
+  predict(test) |>
+  rmse_vec(truth = test$Age)
+
+LASSO_final |>
+  predict(test) |>
+  pull() |>
+  rmse_vec(truth = test$Age)
+```
+
+I think the RMSE calculations are roughly the same even though the coefficients for each model are
+different because both models might average the same errors.
